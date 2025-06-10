@@ -31,6 +31,10 @@ func (w *world) SetCoord(x, y int, val bool) {
 
 func main() {
 	fmt.Println("Press enter at the end to exit the program")
+	defer func() {
+		// hold the terminal open waiting for input
+		_, _ = fmt.Scanf("%s")
+	}()
 	time.Sleep(time.Second * 1)
 	// get the width and height of the terminal
 	width, height, err := term.GetSize(0)
@@ -44,19 +48,19 @@ func main() {
 
 	fmt.Print(lines)
 
-	// hold the terminal open waiting for input
-	_, _ = fmt.Scanf("%s")
 }
 
 // this is just a helper function to get started
 func drawCheckerBoard(width, height int) string {
-	lines := ""
+	lines := strings.Builder{}
 	for h := 0; h < height; h++ {
 		char := " "
 		if h%2 == 0 {
 			char = "█"
 		}
-		lines += char
+		if _, err := lines.Write([]byte(char)); err != nil {
+			panic(fmt.Sprintf("failed to draw checkerboard leading char: %s", err))
+		}
 		// width - 1 because making the first line alternate takes one away
 		for w := 0; w < (width - 1); w++ {
 			if char == " " {
@@ -64,10 +68,13 @@ func drawCheckerBoard(width, height int) string {
 			} else {
 				char = " "
 			}
-			lines += char
+			if _, err := lines.Write([]byte(char)); err != nil {
+				panic(fmt.Sprintf("failed to write checkerboard trailing char: %s", err))
+			}
 		}
-		lines += "\n"
+		if _, err := lines.Write([]byte("\n")); err != nil {
+			panic(fmt.Sprintf("failed to write checkerboard newline char: %s", err))
+		}
 	}
-	lines = strings.TrimRight(lines, "\n")
-	return lines
+	return strings.TrimRight(lines.String(), "\n")
 }
