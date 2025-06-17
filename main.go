@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"math"
 	"strings"
+	"time"
 
 	"golang.org/x/term"
 )
@@ -82,6 +83,96 @@ func (w *world) String() string {
 	return sb.String()
 }
 
+func (w *world) Evolve() error {
+	// for each space inside the map, check the value of all the spaces around
+	// < 2 neighbors dies
+	// 2 - 3 neighbors survives
+	// > 3 neighbors dies
+	newWorld := NewWorld(w.Height(), w.Width())
+	for hRow := range len(w.Places) {
+		for wCol := range len(w.Places[0]) {
+			count, err := w.CountNeighbors(hRow, wCol)
+			if err != nil {
+				return errors.Join(errors.New("failed to count neighbors for evolution"), err)
+			}
+			switch {
+			case count < 2:
+				newWorld.Places[hRow][wCol] = false
+			case count > 2 && count <= 3:
+				newWorld.Places[hRow][wCol] = true
+			default:
+				newWorld.Places[hRow][wCol] = false
+			}
+		}
+	}
+	*w = newWorld
+	return nil
+}
+
+func (w *world) CountNeighbors(height, width int) (int, error) {
+	if height < 0 || height > len(w.Places) {
+		return 0, errors.New("height for count out of bounds")
+	}
+	if width < 0 || (len(w.Places) > 0 && width > len(w.Places[0])) {
+		return 0, errors.New("width out of bounds for count")
+	}
+
+	count := 0
+	// if there's a row above
+	if height > 0 {
+		// check the three spaces
+		if width > 0 {
+			// there's one to the top left
+			if w.Places[height-1][width-1] {
+				count++
+			}
+		}
+		if w.Places[height-1][width] {
+			// there's one in the top middle
+			count++
+		}
+		if width < (len(w.Places[0]) - 1) {
+			// there's one in the top right
+			if w.Places[height-1][width+1] {
+				count++
+			}
+		}
+	}
+	// if there's one to the left
+	if width > 0 {
+		if w.Places[height][width-1] {
+			count++
+		}
+	}
+	// if there's one to the right
+	if width < (len(w.Places[0]) - 1) {
+		if w.Places[height][width+1] {
+			count++
+		}
+	}
+	// if there's a row below
+	if height < (len(w.Places) - 1) {
+		// check the three spaces
+		if width > 0 {
+			// there's one to the bottom left
+			if w.Places[height+1][width-1] {
+				count++
+			}
+		}
+		if w.Places[height+1][width] {
+			// there's one in the bottom middle
+			count++
+		}
+		if width < (len(w.Places[0]) - 1) {
+			// there's one in the bottom right
+			if w.Places[height+1][width+1] {
+				count++
+			}
+		}
+	}
+	return count, nil
+}
+
 func main() {
 	// fmt.Println("Press enter at the end to exit the program")
 	// defer func() {
@@ -110,7 +201,8 @@ func main() {
 	inputs := []inputRow{
 		{0, 0, true},
 		{0, 1, true},
-		{1, 1, true}}
+		{1, 1, true},
+		{1, 2, true}}
 	slog.Info("starting loop")
 	for _, input := range inputs {
 		if err := newWorld.SetCoord(input.x, input.y, input.val); err != nil {
@@ -118,8 +210,14 @@ func main() {
 			return
 		}
 	}
-	fmt.Print(newWorld.String())
 
+	err = nil
+	for err == nil {
+		time.Sleep(time.Millisecond * 500)
+		fmt.Println(newWorld.String())
+		err = newWorld.Evolve()
+	}
+	slog.Error("failed to evolve the world", "error", err)
 }
 
 // this is just a helper function to get started
