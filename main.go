@@ -13,7 +13,7 @@ import (
 
 // [height][width]
 type world struct {
-	Places [][]place
+	Places [][]bool
 }
 
 func (w *world) Width() int {
@@ -27,12 +27,10 @@ func (w *world) Height() int {
 	return len(w.Places)
 }
 
-type place bool
-
 func NewWorld(height, width int) world {
-	new := make([][]place, height)
+	new := make([][]bool, height)
 	for h := range height {
-		new[h] = make([]place, width)
+		new[h] = make([]bool, width)
 		for w := range width {
 			new[h][w] = false
 		}
@@ -95,13 +93,18 @@ func (w *world) Evolve() error {
 			if err != nil {
 				return errors.Join(errors.New("failed to count neighbors for evolution"), err)
 			}
-			switch {
-			case count < 2:
-				newWorld.Places[hRow][wCol] = false
-			case count > 2 && count <= 3:
+			val := w.Places[hRow][wCol]
+			if val {
+				switch {
+				case count < 2:
+					newWorld.Places[hRow][wCol] = false
+				case count == 2 || count == 3:
+					newWorld.Places[hRow][wCol] = true
+				default:
+					newWorld.Places[hRow][wCol] = false
+				}
+			} else if !val && count == 3 {
 				newWorld.Places[hRow][wCol] = true
-			default:
-				newWorld.Places[hRow][wCol] = false
 			}
 		}
 	}
@@ -144,6 +147,10 @@ func (w *world) CountNeighbors(height, width int) (int, error) {
 			count++
 		}
 	}
+	// TODO: do I count (shouldn't)
+	// if w.Places[height][width] {
+	// 	count++
+	// }
 	// if there's one to the right
 	if width < (len(w.Places[0]) - 1) {
 		if w.Places[height][width+1] {
@@ -200,9 +207,10 @@ func main() {
 	}
 	inputs := []inputRow{
 		{0, 0, true},
-		{0, 1, true},
-		{1, 1, true},
-		{1, 2, true}}
+		{0, -1, true},
+		{1, -2, true},
+		{1, 0, true},
+		{2, 0, true}}
 	slog.Info("starting loop")
 	for _, input := range inputs {
 		if err := newWorld.SetCoord(input.x, input.y, input.val); err != nil {
