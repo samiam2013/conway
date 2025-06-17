@@ -134,7 +134,7 @@ func (w *world) CountNeighbors(height, width int) (int, error) {
 			// there's one in the top middle
 			count++
 		}
-		if width < (len(w.Places[0]) - 1) {
+		if width < (w.Width() - 1) {
 			// there's one in the top right
 			if w.Places[height-1][width+1] {
 				count++
@@ -152,13 +152,13 @@ func (w *world) CountNeighbors(height, width int) (int, error) {
 	// 	count++
 	// }
 	// if there's one to the right
-	if width < (len(w.Places[0]) - 1) {
+	if width < (w.Width() - 1) {
 		if w.Places[height][width+1] {
 			count++
 		}
 	}
 	// if there's a row below
-	if height < (len(w.Places) - 1) {
+	if height < (w.Height() - 1) {
 		// check the three spaces
 		if width > 0 {
 			// there's one to the bottom left
@@ -170,7 +170,7 @@ func (w *world) CountNeighbors(height, width int) (int, error) {
 			// there's one in the bottom middle
 			count++
 		}
-		if width < (len(w.Places[0]) - 1) {
+		if width < (w.Width() - 1) {
 			// there's one in the bottom right
 			if w.Places[height+1][width+1] {
 				count++
