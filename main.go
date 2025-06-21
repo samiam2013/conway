@@ -83,9 +83,10 @@ func (w *world) String() string {
 
 func (w *world) Evolve() error {
 	// for each space inside the map, check the value of all the spaces around
-	// < 2 neighbors dies
-	// 2 - 3 neighbors survives
-	// > 3 neighbors dies
+	// if live and < 2 neighbors dies
+	// if live and 2 - 3 neighbors survives
+	// if live and > 3 neighbors dies
+	// if dead and 3 neighbors spawn
 	newWorld := NewWorld(w.Height(), w.Width())
 	for hRow := range len(w.Places) {
 		for wCol := range len(w.Places[0]) {
@@ -147,10 +148,6 @@ func (w *world) CountNeighbors(height, width int) (int, error) {
 			count++
 		}
 	}
-	// TODO: do I count (shouldn't)
-	// if w.Places[height][width] {
-	// 	count++
-	// }
 	// if there's one to the right
 	if width < (w.Width() - 1) {
 		if w.Places[height][width+1] {
@@ -181,12 +178,6 @@ func (w *world) CountNeighbors(height, width int) (int, error) {
 }
 
 func main() {
-	// fmt.Println("Press enter at the end to exit the program")
-	// defer func() {
-	// 	// hold the terminal open waiting for input
-	// 	_, _ = fmt.Scanf("%s")
-	// }()
-	// time.Sleep(time.Second * 1)
 	// get the width and height of the terminal
 	width, height, err := term.GetSize(0)
 	if err != nil {
@@ -194,9 +185,6 @@ func main() {
 		return
 	}
 	slog.Info("dimensions", "width", width, "height", height)
-	// draw blocks every other column
-	// lines := drawCheckerBoard(width, height)
-	// fmt.Print(lines)
 
 	slog.Info("building new world")
 	newWorld := NewWorld(height, width)
@@ -205,6 +193,7 @@ func main() {
 		y   int
 		val bool
 	}
+	// the simplest glider
 	inputs := []inputRow{
 		{0, 0, true},
 		{0, -1, true},
@@ -221,38 +210,9 @@ func main() {
 
 	err = nil
 	for err == nil {
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 50)
 		fmt.Println(newWorld.String())
 		err = newWorld.Evolve()
 	}
 	slog.Error("failed to evolve the world", "error", err)
 }
-
-// this is just a helper function to get started
-// func drawCheckerBoard(width, height int) string {
-// 	lines := strings.Builder{}
-// 	for h := range height {
-// 		char := " "
-// 		if h%2 == 0 {
-// 			char = "█"
-// 		}
-// 		if _, err := lines.Write([]byte(char)); err != nil {
-// 			panic(fmt.Sprintf("failed to draw checkerboard leading char: %s", err))
-// 		}
-// 		// width - 1 because making the first line alternate takes one away
-// 		for range width - 1 {
-// 			if char == " " {
-// 				char = "█"
-// 			} else {
-// 				char = " "
-// 			}
-// 			if _, err := lines.Write([]byte(char)); err != nil {
-// 				panic(fmt.Sprintf("failed to write checkerboard trailing char: %s", err))
-// 			}
-// 		}
-// 		if _, err := lines.Write([]byte("\n")); err != nil {
-// 			panic(fmt.Sprintf("failed to write checkerboard newline char: %s", err))
-// 		}
-// 	}
-// 	return strings.TrimRight(lines.String(), "\n")
-// }
